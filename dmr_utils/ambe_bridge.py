@@ -636,7 +636,7 @@ class AMBE_IPSC(AMBE_BASE):
             _t.close()
         except IOError:
             self._logger.error('Can not open template.bin file')
-            return
+            exit()
         self._logger.debug('IPSC templates loaded')
     def export_voice(self, _tx_slot, _seq, _ambe):
         self.send_tlv(TAG_AMBE_49, struct.pack("b",_tx_slot.slot) + _ambe)    # send AMBE
