@@ -550,7 +550,7 @@ class AMBE_IPSC(AMBE_BASE):
         ambe49_3 = BitArray('0x' + ahex(_ambe[14:21]))[0:50]
         ambe = ambe49_1 + ambe49_2 + ambe49_3
 
-        _frame = _tempVoice[_rx_slot.vf][:33] + ambe.tobytes() + self._tempVoice[_rx_slot.vf][52:]    # Insert the 3 49 bit AMBE frames
+        _frame = self._tempVoice[_rx_slot.vf][:33] + ambe.tobytes() + self._tempVoice[_rx_slot.vf][52:]    # Insert the 3 49 bit AMBE frames
         self.rewriteFrame(_frame, _rx_slot.slot, _rx_slot.dst_id, _rx_slot.rf_src, _rx_slot.repeater_id)
         _rx_slot.vf = (_rx_slot.vf + 1) % 6                         # the voice frame counter which is always mod 6
         pass
