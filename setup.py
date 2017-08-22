@@ -9,7 +9,7 @@ def readme():
 setup(name='dmr_utils',
       version='0.1.7',
       description='ETSI DMR (Digital Mobile Radio) Teir II Utilities',
-      long_description='Modules to disassemble and assemble DMR packets, including generating and decoding varoius FEC routines',
+      long_description='Modules to disassemble and assemble DMR packets, including generating and decoding various FEC routines',
       classifiers=[
           'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)'
           'Programming Language :: Python :: 2.7'
