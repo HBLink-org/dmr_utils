@@ -108,6 +108,7 @@ TAG_REMOTE_CMD  = 5         # SubCommand for remote configuration
 TAG_AMBE_49     = 6         # AMBE frame of 49 bit samples (IPSC)
 TAG_AMBE_72     = 7         # AMBE frame of 72 bit samples (HB)
 TAG_SET_INFO    = 8         # Set DMR Info for slot
+TAG_DMR_TEST    = 9
 
 # Burst Data Types
 BURST_DATA_TYPE = {
@@ -222,12 +223,18 @@ class AMBE_BASE:
             self._logger.error('(%s) file %s not found', self._system, _fileName)
             traceback.print_exc()
     # TG selection, send a simple blank voice frame to network
-    def sendBlankAmbe(self, _rx_slot, _stream_id):
+    def sendBlankAmbe(self, _rx_slot, _stream_id, _frames=1):
         _rx_slot.stream_id = _stream_id
         self.send_voice_header(_rx_slot)
+        sleep(0.06)
         silence = '\xAC\AA\x40\x20\x00\x44\x40\x80\x80'
-        self.send_voice72(_rx_slot, silence+silence+silence)
+        self._logger.info('(%s) Playing %d frames', self._system, _frames)
+        while _frames > 0:
+            self.send_voice72(_rx_slot, silence+silence+silence)
+            sleep(0.06)
+            _frames = _frames - 1
         self.send_voice_term(_rx_slot)
+        self._logger.info('(%s) Playback done', self._system)
     # Twisted callback with data from socket
     def import_datagramReceived(self, _data, (_host, _port)):
         subscriber_ids, talkgroup_ids, peer_ids = self._parent.get_globals()
@@ -283,6 +290,10 @@ class AMBE_BASE:
                         _rx_slot.dst_id = hex_str_3(int(v.split('=')[1]))
                         self._logger.info('(%s) New txTg = %d on Slot %d', self._system, int_id(_rx_slot.dst_id), _rx_slot.slot)
                         self.sendBlankAmbe(_rx_slot, hex_str_4(randint(0,0xFFFFFFFF)))
+                    elif (t == TAG_DMR_TEST):
+                        _rx_slot.dst_id = hex_str_3(int(v.split('=')[1]))
+                        self._logger.info('(%s) New txTg = %d on Slot %d', self._system, int_id(_rx_slot.dst_id), _rx_slot.slot)
+                        thread.start_new_thread(self.sendBlankAmbe, (_rx_slot, hex_str_4(randint(0,0xFFFFFFFF)), 5 * 60 * 500))
                     elif (t == TAG_PLAY_AMBE):
                         thread.start_new_thread( self.play_ambe_file, (v.split('=')[1], _rx_slot) )
                     elif (t == TAG_REMOTE_CMD):
@@ -378,6 +389,7 @@ class AMBE_HB(AMBE_BASE):
                      0b00        # Null message
                      ]
         self._DMOStreamID = 0
+        self._DMOTimeout = 0
     
     def send_voice_header(self, _rx_slot):
         AMBE_BASE.send_voice_header(self, _rx_slot)
@@ -422,8 +434,9 @@ class AMBE_HB(AMBE_BASE):
                 _clientDict = self._parent._clients[_client]
                 if _clientDict['TX_FREQ'] == _clientDict['RX_FREQ']:
 
-                    if self._DMOStreamID == 0: # are we idle?
+                    if (self._DMOStreamID == 0) or (time() > self._DMOTimeout): # are we idle?
                         self._DMOStreamID = _rx_slot.stream_id
+                        self._DMOTimeout = time() + 0.50
                         self._logger.info('(%s) DMO Transition from idle to stream %d', self._system, int_id(_rx_slot.stream_id))
                     if _rx_slot.stream_id != self._DMOStreamID: # packet is from wrong stream?
                         if (_frame[15] & 0x2F) == 0x21: # Call start?
@@ -442,6 +455,7 @@ class AMBE_HB(AMBE_BASE):
                     _frame[_index+11] = _repeaterID[_index]
 
                 self._parent.send_client(_client, _frame)
+                self._DMOTimeout = time() + 0.50
         else:
             self._parent.send_master(_frame)
 
@@ -550,7 +564,7 @@ class AMBE_IPSC(AMBE_BASE):
         ambe49_3 = BitArray('0x' + ahex(_ambe[14:21]))[0:50]
         ambe = ambe49_1 + ambe49_2 + ambe49_3
 
-        _frame = self._tempVoice[_rx_slot.vf][:33] + ambe.tobytes() + self._tempVoice[_rx_slot.vf][52:]    # Insert the 3 49 bit AMBE frames
+        _frame = _tempVoice[_rx_slot.vf][:33] + ambe.tobytes() + self._tempVoice[_rx_slot.vf][52:]    # Insert the 3 49 bit AMBE frames
         self.rewriteFrame(_frame, _rx_slot.slot, _rx_slot.dst_id, _rx_slot.rf_src, _rx_slot.repeater_id)
         _rx_slot.vf = (_rx_slot.vf + 1) % 6                         # the voice frame counter which is always mod 6
         pass
