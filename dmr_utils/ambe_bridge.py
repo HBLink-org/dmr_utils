@@ -355,7 +355,7 @@ class AMBE_BASE:
 
     # Export voice frame to partner (actually done in sub classes for 49 or 72 bits)               
     def export_voice(self, _tx_slot, _seq, _ambe):
-        if _seq != (_tx_slot.lastSeq+1):
+        if _seq != ((_tx_slot.lastSeq+1) & 0xff):
             _tx_slot.lostFrame += 1
         _tx_slot.lastSeq = _seq
 
@@ -515,7 +515,8 @@ class AMBE_HB(AMBE_BASE):
         return self.__encode_voice_header( _rx_slot, DMR_DATA_SYNC_MS, 2 )   # data_type=Voice_LC_Terminator
     def export_voice(self, _tx_slot, _seq, _ambe):
         self.send_tlv(TAG_AMBE_72, struct.pack("b",_tx_slot.slot) + _ambe)    # send AMBE
-        if _seq != (_tx_slot.lastSeq+1):
+        if _seq != ((_tx_slot.lastSeq+1) & 0xff):
+            self._logger.info('(%s) Seq number not found.  got %d expected %d', self._system, _seq, _tx_slot.lastSeq+1)
             _tx_slot.lostFrame += 1
         _tx_slot.lastSeq = _seq
 
@@ -654,7 +655,7 @@ class AMBE_IPSC(AMBE_BASE):
         self._logger.debug('IPSC templates loaded')
     def export_voice(self, _tx_slot, _seq, _ambe):
         self.send_tlv(TAG_AMBE_49, struct.pack("b",_tx_slot.slot) + _ambe)    # send AMBE
-        if _seq != (_tx_slot.lastSeq+1):
+        if _seq != ((_tx_slot.lastSeq+1) & 0xff):
             _tx_slot.lostFrame += 1
         _tx_slot.lastSeq = _seq
 
