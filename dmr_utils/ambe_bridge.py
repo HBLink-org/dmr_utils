@@ -572,7 +572,7 @@ class AMBE_IPSC(AMBE_BASE):
     def send_voice_term(self, _rx_slot):
         self.rewriteFrame(self._tempTerm, _rx_slot.slot, _rx_slot.dst_id, _rx_slot.rf_src, _rx_slot.repeater_id)
         pass
-    def rewriteFrame( self, _frame, _newSlot, _newGroup, _newSouceID, _newPeerID ):
+    def rewriteFrame( self, _frame, _newSlot, _newGroup, _newSourceID, _newPeerID ):
         
         _peerid         = _frame[1:5]                 # int32 peer who is sending us a packet
         _src_sub        = _frame[6:9]                 # int32 Id of source
@@ -581,11 +581,13 @@ class AMBE_IPSC(AMBE_BASE):
 
         ########################################################################
         # re-Write the peer radio ID to that of this program
-        _frame = _frame.replace(_peerid, _newPeerID)
-        # re-Write the source subscriber ID to that of this program
-        _frame = _frame.replace(_src_sub, _newSouceID)
-        # Re-Write the destination Group ID
-        _frame = _frame.replace(_group, _newGroup)
+        _frame = _frame.replace(_peerid, _newPeerID, 1)
+        # re-Write the source subscriber ID + destination Group ID combo in the IPSC Header
+        _frame = _frame.replace(_src_sub + _group, _newSourceID + _newGroup, 1)
+        # Re-Write the destination Group ID + source subscriber ID combo in the decoded LCs
+        _frame = _frame.replace(_group + _src_sub, _newGroup + _newSourceID, 1)
+        
+        
         _frame = _frame[:5] + struct.pack("i", self.ipsc_seq)[0] + _frame[6:]   # ipsc sequence number increments on each transmission (stream id)
         
         # Re-Write IPSC timeslot value
