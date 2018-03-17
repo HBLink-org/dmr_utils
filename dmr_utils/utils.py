@@ -20,11 +20,11 @@
 
 from __future__ import print_function
 
+import json
 from os.path import isfile, getmtime
 from time import time
 from urllib import URLopener
 from csv import reader as csv_reader
-from csv import DictReader as csv_dict_reader
 from binascii import b2a_hex as ahex
 
 # Does anybody read this stuff? There's a PEP somewhere that says I should do this.
@@ -34,12 +34,6 @@ __credits__    = 'Colin Durbridge, G4EML, Steve Zingman, N4IRS; Mike Zingman'
 __license__    = 'GNU GPLv3'
 __maintainer__ = 'Cort Buffington, N0MJS'
 __email__      = 'n0mjs@me.com'
-
-
-# CONSTANTS
-SUB_FIELDS   = ('ID', 'CALLSIGN', 'NAME', 'CITY', 'STATE', 'COUNTRY', 'TYPE')
-PEER_FIELDS  = ('ID', 'CALLSIGN', 'CITY', 'STATE', 'COUNTRY', 'FREQ', 'CC', 'OFFSET', 'TYPE', 'LINKED', 'TRUSTEE', 'INFO', 'OTHER', 'NETWORK', )
-TGID_FIELDS  = ('ID', 'NAME')
 
 
 #************************************************
@@ -73,6 +67,22 @@ def int_id(_hex_string):
 
 
 #************************************************
+#     RANDOM UTILITY FUNCTIONS
+#************************************************
+
+# Ensure all keys and values in a dictionary are ascii 
+def mk_ascii_dict(input):
+    if isinstance(input, dict):
+        return {mk_ascii_dict(key): mk_ascii_dict(value) for key, value in input.iteritems()}
+    elif isinstance(input, list):
+        return [mk_ascii_dict(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('ascii','ignore')
+    else:
+        return input
+
+
+#************************************************
 #     ID ALIAS FUNCTIONS
 #************************************************
 
@@ -100,38 +110,74 @@ def try_download(_path, _file, _url, _stale,):
 # LEGACY VERSION - MAKES A SIMPLE {INTEGER ID: 'CALLSIGN'} DICTIONARY
 def mk_id_dict(_path, _file):
     dict = {}
-    try:
-        with open(_path+_file, 'rU') as _handle:
-            ids = csv_reader(_handle, dialect='excel', delimiter=',')
-            for row in ids:
-                dict[int(row[0])] = (row[1])
-            _handle.close
+    
+    if _file.endswith(('.json','.JSON')):         
+        try:
+            with open(_path+_file, 'rU') as _handle:
+                ids = json.loads(_handle.read().decode('utf-8', 'ignore'))
+                if 'repeaters' in ids:
+                    ids = ids['repeaters']
+                    id_type = 'locator'
+                    id_value = 'callsign'
+                elif 'users' in ids:
+                    ids = ids['users']
+                    id_type = 'radio_id'
+                    id_value = 'callsign'
+                elif 'tgids' in ids:
+                    ids = ids['tgids']
+                    id_type = 'tgid'
+                    id_value = 'name'
+                else:
+                    return dict
+
+                for row in range(len(ids)):
+                    dict[int(ids[row][id_type])] = ids[row][id_value].encode('ascii','ignore')
+                
+                _handle.close
+                return dict
+        except IOError:
             return dict
-    except IOError:
-        return dict
+        
+    elif _file.endswith(('.csv','.CSV')):
+        try:
+            with open(_path+_file, 'rU') as _handle:
+                ids = csv_reader(_handle, dialect='excel', delimiter=',')
+                for row in ids:
+                    dict[int(row[0])] = (row[1])
+                _handle.close
+                return dict
+        except IOError:
+            return dict
 
 # NEW VERSION - MAKES A FULL DICTIONARY OF INFORMATION BASED ON TYPE OF ALIAS FILE
-# BASED ON DOWNLOADS FROM DMR-MARC, TGID IS STILL A "SIMPLE" DICTIONARY      
-def mk_full_id_dict(_path, _file, _type):
+# BASED ON DOWNLOADS FROM DMR-MARC AND ONLY WORKS FOR DMR-MARC STYLE JSON FILES!!!  
+# RESULTING DICTIONARY KEYS ARE INTEGER RADIO ID, AND VALURES ARE DICTIONARIES OF
+# WHATEVER IS IN EACH ROW OF THE DMR-MARC DATABASE USED, IE.:
+#   312345: {u'map': u'0', u'color_code': u'1', u'city': u'Morlon'.....u'map_info': u'', u'trustee': u'HB9HFF'}
+def mk_full_id_dict(_path, _file):
     dict = {}
-    if _type == 'subscriber':
-        fields = SUB_FIELDS
-    elif _type == 'peer':
-        fields = PEER_FIELDS
-    elif _type == 'tgid':
-        fields = TGID_FIELDS
     try:
         with open(_path+_file, 'rU') as _handle:
-            ids = csv_dict_reader(_handle, fieldnames=fields, restkey='OTHER', dialect='excel', delimiter=',')
-            for row in ids:
-                for item in row:
-                    dict[int(row['ID'])] = row
+            ids = json.loads(_handle.read().decode('utf-8', 'ignore'))
+            if 'repeaters' in ids:
+                ids = ids['repeaters']
+                id_type = 'locator'
+            elif 'users' in ids:
+                ids = ids['users']
+                id_type = 'radio_id'
+            else:
+                return dict
+
+            for row in range(len(ids)):
+                dict[int(ids[row][id_type])] = ids[row]
+        
             _handle.close
+            dict = mk_ascii_dict(dict)
             return dict
     except IOError:
         return dict
 
-# THESE ARE THE SAME THING FOR LEGACY PURPOSES
+# USE THIS TO QUERY THE ID DICTIONARIES WE MAKE WITH THE FUNCTION(S) ABOVE
 def get_alias(_id, _dict, *args):
     if type(_id) == str:
         _id = int_id(_id)
@@ -148,23 +194,5 @@ def get_alias(_id, _dict, *args):
             return _dict[_id]
     return _id
 
-def get_info(_id, _dict, *args):
-    if type(_id) == str:
-        _id = int_id(_id)
-    if _id in _dict:
-        if args:
-            retValue = []
-            for _item in args:
-                try:
-                    retValue.append(_dict[_id][_item])
-                except TypeError:
-                    return _dict[_id]
-            return retValue
-        else:
-            return _dict[_id]
-    return _id
-    
-    
-
-    
-    
+# FOR LEGACY PURPOSES
+get_info = get_alias
