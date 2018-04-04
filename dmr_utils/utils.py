@@ -22,6 +22,7 @@ from __future__ import print_function
 
 import json
 from os.path import isfile, getmtime
+from os import remove
 from time import time
 from urllib import URLopener
 from csv import reader as csv_reader
@@ -114,7 +115,13 @@ def mk_id_dict(_path, _file):
     if _file.endswith(('.json','.JSON')):         
         try:
             with open(_path+_file, 'rU') as _handle:
-                ids = json.loads(_handle.read().decode('utf-8', 'ignore'))
+
+                try:
+                    ids = json.loads(_handle.read().decode('utf-8', 'ignore'))
+                except (ValueError):
+                    remove(_path+_file)
+                    return dict
+
                 if 'repeaters' in ids:
                     ids = ids['repeaters']
                     id_type = 'locator'
@@ -130,9 +137,13 @@ def mk_id_dict(_path, _file):
                 else:
                     return dict
 
-                for row in range(len(ids)):
-                    dict[int(ids[row][id_type])] = ids[row][id_value].encode('ascii','ignore')
-                
+                try:
+                    for row in range(len(ids)):
+                        dict[int(ids[row][id_type])] = ids[row][id_value].encode('ascii','ignore')
+                except (ValueError, KeyError):
+                    remove(_path+_file)
+                    return dict;
+
                 _handle.close
                 return dict
         except IOError:
