@@ -172,7 +172,7 @@ def mk_full_id_dict(_path, _file):
                 dict[int(ids[row][id_type])] = ids[row]
         
             _handle.close
-            #dict = mk_ascii_dict(dict)
+            dict = mk_ascii_dict(dict)
             return dict
     except IOError:
         return dict
