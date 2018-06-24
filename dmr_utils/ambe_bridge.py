@@ -338,7 +338,7 @@ class AMBE_BASE:
         metadata = _src_id[0:3] + _repeater_id[0:4] + _dst_id[0:3] + struct.pack("b", _slot) + struct.pack("b", _cc)
         self.send_tlv(TAG_BEGIN_TX, metadata)    # start transmission
         self._sock.sendto('reply log2 {} {}'.format(_src_alias, int_id(_dst_id)), (self._dmrgui, 34003))
-        self._logger.info('Voice Transmission Start on TS {} and TG {} ({}) from {}'.format(_slot, get_alias(_dst_id, talkgroup_ids), int_id(_dst_id), _src_alias))
+        self._logger.info('Voice Transmission Start on TS {} and TG {} ({}) from {} ({})'.format(_slot, get_alias(_dst_id, talkgroup_ids), int_id(_dst_id), _src_alias, int_id(_src_id)))
 
         _tx_slot = self.tx[_slot]
         _tx_slot.slot = _slot
