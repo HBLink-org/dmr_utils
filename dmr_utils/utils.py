@@ -104,7 +104,10 @@ def mk_id_dict(_path, _file):
         with open(_path+_file, 'rU') as _handle:
             ids = csv_reader(_handle, dialect='excel', delimiter=',')
             for row in ids:
-                dict[int(row[0])] = (row[1])
+                try:
+                    dict[int(row[0])] = (row[1])
+                except:
+                    pass
             _handle.close
             return dict
     except IOError:
@@ -125,7 +128,10 @@ def mk_full_id_dict(_path, _file, _type):
             ids = csv_dict_reader(_handle, fieldnames=fields, restkey='OTHER', dialect='excel', delimiter=',')
             for row in ids:
                 for item in row:
-                    dict[int(row['ID'])] = row
+                    try:
+                        dict[int(row['ID'])] = row
+                    except:
+                        pass
             _handle.close
             return dict
     except IOError:

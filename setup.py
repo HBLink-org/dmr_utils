@@ -7,7 +7,7 @@ def readme():
         return file.read()
 
 setup(name='dmr_utils',
-      version='0.1.15',
+      version='0.1.16',
       description='ETSI DMR (Digital Mobile Radio) Tier II Utilities',
       long_description='Modules to disassemble and assemble DMR packets, including generating and decoding various FEC routines',
       classifiers=[
