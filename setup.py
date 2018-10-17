@@ -7,7 +7,7 @@ def readme():
         return file.read()
 
 setup(name='dmr_utils',
-      version='0.1.16',
+      version='0.1.19',
       description='ETSI DMR (Digital Mobile Radio) Tier II Utilities',
       long_description='Modules to disassemble and assemble DMR packets, including generating and decoding various FEC routines',
       classifiers=[
@@ -23,9 +23,9 @@ setup(name='dmr_utils',
       keywords='dmr radio digital fec ecc mmdvm ham amateur radio',
       author='Cortney T. Buffington, N0MJS',
       author_email='n0mjs@me.com',
-      install_requires=['bitarray','bitstring'],
+      install_requires=['bitstring>=3.1.5','bitarray>=0.8.3'],
       license='GPLv3',
       url='https://github.com/n0mjs710/dmr_utils',
-      packages=['dmr_utils'],
-      #packages=find_packages()
+      #packages=['dmr_utils'],
+      packages=find_packages()
      )
