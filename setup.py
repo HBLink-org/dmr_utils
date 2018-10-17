@@ -11,15 +11,14 @@ setup(name='dmr_utils',
       description='ETSI DMR (Digital Mobile Radio) Tier II Utilities',
       long_description='Modules to disassemble and assemble DMR packets, including generating and decoding various FEC routines',
       classifiers=[
-          'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)'
-          'Programming Language :: Python :: 2.7'
-          'Intended Audience :: Developers'
-          'Natural Language :: English'
-          'Operating System :: OS Independent'
-          'Programming Language :: Python :: Implementation :: CPython'
-          'Topic :: Communications :: Ham Radio'
-          'Topic :: Software Development :: Libraries :: Python Modules'
-          'Topic :: Utilities'
+          'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+          'Development Status :: 5 - Production/Stable',
+          'Programming Language :: Python :: 2.7',
+          'Natural Language :: English',
+          'Operating System :: OS Independent',
+          'Topic :: Communications :: Ham Radio',
+          'Topic :: Software Development :: Libraries :: Python Modules',
+          'Topic :: Utilities',
       ],
       keywords='dmr radio digital fec ecc mmdvm ham amateur radio',
       author='Cortney T. Buffington, N0MJS',
