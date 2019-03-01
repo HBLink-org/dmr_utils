@@ -8,8 +8,8 @@
 # Install the required support programs
 # apt-get install unzip -y
 # apt-get install python-dev -y
-apt-get install python-pip -y
+# apt-get install python-pip -y
 
-test -e ./setup.py || exit 1
-pip install --upgrade .
+apt-get install python-pip -y
+pip install dmr_utils
 
