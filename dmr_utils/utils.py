@@ -102,6 +102,8 @@ def mk_id_dict(_path, _file):
     try:
         with open(_path+_file, 'rU') as _handle:
             records = jload(_handle)
+            if 'count' in records:
+                del records['count']
             records = records[records.keys()[0]]
             _handle.close
             for record in records:
@@ -120,6 +122,8 @@ def mk_full_id_dict(_path, _file, _type):
     try:
         with open(_path+_file, 'rU') as _handle:
             records = jload(_handle)
+            if 'count' in records:
+                del records['count']
             records = records[records.keys()[0]]
             _handle.close
             if _type == 'peer':
