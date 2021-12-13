@@ -55,7 +55,7 @@ __license__    = 'GNU GPLv3'
 __maintainer__ = 'Cort Buffington, N0MJS'
 __email__      = 'n0mjs@me.com'
 __status__     = 'pre-alpha'
-__version__    = '20170529'
+__version__    = '20211212'
 
 
 '''
