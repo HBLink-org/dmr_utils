@@ -55,7 +55,7 @@ __license__    = 'GNU GPLv3'
 __maintainer__ = 'Cort Buffington, N0MJS'
 __email__      = 'n0mjs@me.com'
 __status__     = 'pre-alpha'
-__version__    = '20170529'
+__version__    = '20211212'
 
 
 '''
@@ -227,7 +227,7 @@ class AMBE_BASE:
         _rx_slot.stream_id = _stream_id
         self.send_voice_header(_rx_slot)
         sleep(0.06)
-        silence = '\xAC\AA\x40\x20\x00\x44\x40\x80\x80'
+        silence = '\xAC\xAA\x40\x20\x00\x44\x40\x80\x80'
         self._logger.info('(%s) Playing %d frames', self._system, _frames)
         while _frames > 0:
             self.send_voice72(_rx_slot, silence+silence+silence)
@@ -527,15 +527,16 @@ class AMBE_IPSC(AMBE_BASE):
         self._tempVoice = [0] * 6
         self._tempTerm = [0]
 
-        self._seq = 0                        # RPT Transmit frame sequence number (auto-increments for each frame). 16 bit
-        self.ipsc_seq = 0                    # Same for all frames in a transmit session (sould use stream_id).  8 bit
+        self._seq = [0] * 3                  # RTP Transmit frame sequence number (auto-increments for each frame). 16 bit (1 per slot)
+        self.ipsc_seq = [0] * 3              # Same for all frames in a transmit session (sould use stream_id).  8 bit (1 per slot)
 
         self.load_template()
         pass
     def send_voice_header(self, _rx_slot):
         AMBE_BASE.send_voice_header(self, _rx_slot)
-        self._seq = randint(0,32767)                    # A transmission uses a random number to begin its sequence (16 bit)
-        self.ipsc_seq = (self.ipsc_seq  + 1) & 0xff     # this is an 8 bit value which wraps around.
+        _slot = _rx_slot.slot
+        self._seq[_slot] = randint(0,32767)                    # A transmission uses a random number to begin its sequence (16 bit)
+        self.ipsc_seq[_slot] = (self.ipsc_seq[_slot]  + 1) & 0xff     # this is an 8 bit value which wraps around.
 
         for i in range(0, 3):                           # Output the 3 HEAD frames to our peers
             self.rewriteFrame(self._tempHead[i], _rx_slot.slot, _rx_slot.dst_id, _rx_slot.rf_src, _rx_slot.repeater_id)
@@ -588,7 +589,7 @@ class AMBE_IPSC(AMBE_BASE):
         _frame = _frame.replace(_group + _src_sub, _newGroup + _newSourceID, 1)
         
         
-        _frame = _frame[:5] + struct.pack("i", self.ipsc_seq)[0] + _frame[6:]   # ipsc sequence number increments on each transmission (stream id)
+        _frame = _frame[:5] + struct.pack("i", self.ipsc_seq[_newSlot])[0] + _frame[6:]   # ipsc sequence number increments on each transmission (stream id)
         
         # Re-Write IPSC timeslot value
         _call_info = int_id(_frame[17:18])
@@ -599,9 +600,9 @@ class AMBE_IPSC(AMBE_BASE):
         _call_info = chr(_call_info)
         _frame = _frame[:17] + _call_info + _frame[18:]
     
-        _x = struct.pack("i", self._seq)
+        _x = struct.pack("i", self._seq[_newSlot])
         _frame = _frame[:20] + _x[1] + _x[0] + _frame[22:]          # rtp sequence number increments for EACH frame sent out
-        self._seq = self._seq + 1
+        self._seq[_newSlot] = self._seq[_newSlot] + 1
         
         # Re-Write DMR timeslot value
         # Determine if the slot is present, so we can translate if need be
